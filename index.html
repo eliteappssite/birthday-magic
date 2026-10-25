@@ -33,7 +33,7 @@ main{position:relative;z-index:1;width:min(1100px,92%);margin:auto;padding:28px 
         <label class="field"><span>Birthday date (optional)</span><input id="dateInput" type="date" /></label>
       </div>
       <label class="field"><span>Add their picture</span><input id="photoInput" type="file" accept="image/*" /><small class="mini-note">JPG, PNG or WEBP • stays on this device</small></label>
-      <label class="field"><span>Add up to 4 extra memory photos</span><input id="galleryInput" type="file" accept="image/*" multiple /><small class="mini-note">Select up to four photos for the premium memory cards.</small></label>
+      <label class="field"><span>Add up to 4 extra memory photos</span><input id="galleryInput" type="file" accept="image/*" multiple /><small class="mini-note">Select multiple photos together, or choose photos again to add more (up to 4 total).</small></label>
       <label class="field"><span>Background birthday song (MP3 / audio)</span><input id="musicFileInput" type="file" accept="audio/*" /><small class="mini-note">Upload a song from your device. For GitHub visitors to hear a default song, add a licensed file named <b>birthday-song.mp3</b> beside index.html.</small></label>
       <label class="field"><span>Your personal message</span><textarea id="messageInput" maxlength="450" placeholder="Write something heartfelt...">Wishing you a day filled with laughter, love, beautiful surprises and memories that last forever. Keep shining and never stop being amazing! 💖</textarea></label>
       <label class="field"><span>Sign your name (optional)</span><input id="senderInput" maxlength="40" placeholder="From: your name" /></label>
@@ -69,7 +69,7 @@ main{position:relative;z-index:1;width:min(1100px,92%);margin:auto;padding:28px 
   <footer class="footer">Made for moments worth celebrating ✨
     <div class="creator">Developed with ✨ by <strong>Tarun</strong> · <a href="https://www.instagram.com/tarun.amv?vrfl=bXZndmRvN3Q1d2No" target="_blank" rel="noopener noreferrer">Instagram @tarun.amv</a></div>
   </footer>
-</main><audio id="bgMusic" loop autoplay playsinline preload="auto"><source src="birthday-song.mp3" type="audio/mpeg"></audio><div class="toast" id="toast">Copied!</div>
+</main><audio id="bgMusic" loop autoplay playsinline preload="auto"><source src="birthday-song.mp3" type="audio/mpeg"></audio><button id="startMusicOverlay" class="btn primary" style="position:fixed;z-index:20;left:50%;bottom:24px;transform:translateX(-50%);display:none;box-shadow:0 10px 35px #0008">▶ Tap to start birthday music</button><div class="toast" id="toast">Copied!</div>
 <script>
 const $=id=>document.getElementById(id);let photoUrl=null,audioCtx=null,toneTimer=null,isPlaying=false,extraPhotoUrls=[],uploadedMusicUrl=null;
 const defaultMessage='Wishing you a day filled with laughter, love, beautiful surprises and memories that last forever. Keep shining and never stop being amazing! 💖';
@@ -80,15 +80,31 @@ function theme(){const val=$('styleInput').value;document.body.classList.remove(
 function update(){const name=$('nameInput').value.trim()||'Someone Special';$('namePreview').textContent=name;$('messagePreview').textContent=$('messageInput').value.trim()||'Wishing you the happiest birthday! May your year be full of joy and wonderful surprises. ✨';const date=$('dateInput').value;if(date){const d=new Date(date+'T12:00:00');$('datePreview').textContent='🎂 '+d.toLocaleDateString(undefined,{day:'numeric',month:'long',year:'numeric'})}else $('datePreview').textContent='HAPPY BIRTHDAY ✨';const sender=$('senderInput').value.trim();$('senderPreview').textContent=sender?'With love, '+sender:'A day as wonderful as you are';theme()}
 ['nameInput','messageInput','dateInput','senderInput'].forEach(id=>$(id).addEventListener('input',update));$('styleInput').addEventListener('change',update);
 $('photoInput').addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(!file)return;if(!file.type.startsWith('image/')){toast('Please choose an image file');return}if(photoUrl)URL.revokeObjectURL(photoUrl);photoUrl=URL.createObjectURL(file);$('photoPreview').src=photoUrl;$('photoPreview').classList.remove('hidden');$('photoPlaceholder').classList.add('hidden')});
-// Premium gallery: up to four additional photos.
+// Premium gallery: add photos over multiple selections, up to four total.
 $('galleryInput').addEventListener('change',e=>{
-  const files=Array.from(e.target.files||[]).filter(f=>f.type.startsWith('image/')).slice(0,4);
-  extraPhotoUrls.forEach(url=>URL.revokeObjectURL(url));extraPhotoUrls=[];
+  const chosen=Array.from(e.target.files||[]).filter(f=>f.type.startsWith('image/'));
+  if(!chosen.length)return;
+  const remaining=Math.max(0,4-extraPhotoUrls.length);
+  const files=chosen.slice(0,remaining);
+  if(chosen.length>remaining)toast('Only 4 memory photos can be added.');
+  files.forEach(file=>extraPhotoUrls.push(URL.createObjectURL(file)));
   const grid=$('galleryGrid');grid.innerHTML='';
-  if(!files.length){$('galleryNote').textContent='Choose extra photos above to replace these sample cards.';return;}
-  files.forEach((file,index)=>{const url=URL.createObjectURL(file);extraPhotoUrls.push(url);const card=document.createElement('article');card.className='memory-card card-pop';const img=document.createElement('img');img.src=url;img.alt='Memory photo '+(index+1);const title=document.createElement('p');title.textContent=['A Beautiful Moment','Best Memories','Birthday Joy','Forever Special'][index];const caption=document.createElement('small');caption.textContent='Memory '+(index+1);card.append(img,title,caption);grid.appendChild(card);});
-  for(let i=files.length;i<4;i++){const card=document.createElement('article');card.className='memory-card';const empty=document.createElement('div');empty.className='memory-empty';empty.textContent=['✨','💖','🎉','🌟'][i];const title=document.createElement('p');title.textContent='More memories';const cap=document.createElement('small');cap.textContent='Add another photo';card.append(empty,title,cap);grid.appendChild(card);}
-  $('galleryNote').textContent=files.length+' of 4 memory photos added. Photos stay on this device.';
+  extraPhotoUrls.forEach((url,index)=>{
+    const card=document.createElement('article');card.className='memory-card card-pop';
+    const img=document.createElement('img');img.src=url;img.alt='Memory photo '+(index+1);
+    const title=document.createElement('p');title.textContent=['A Beautiful Moment','Best Memories','Birthday Joy','Forever Special'][index];
+    const caption=document.createElement('small');caption.textContent='Memory '+(index+1);
+    card.append(img,title,caption);grid.appendChild(card);
+  });
+  for(let i=extraPhotoUrls.length;i<4;i++){
+    const card=document.createElement('article');card.className='memory-card';
+    const empty=document.createElement('div');empty.className='memory-empty';empty.textContent=['✨','💖','🎉','🌟'][i];
+    const title=document.createElement('p');title.textContent='More memories';
+    const cap=document.createElement('small');cap.textContent='Add another photo';card.append(empty,title,cap);grid.appendChild(card);
+  }
+  $('galleryNote').textContent=extraPhotoUrls.length+' of 4 memory photos added. You can select more until all four are filled.';
+  // Clear input so the same file can be selected again if needed.
+  e.target.value='';
 });
 // Background music: user can upload an audio file; browsers require a user gesture to start audio.
 $('musicFileInput').addEventListener('change',e=>{const file=e.target.files&&e.target.files[0];if(!file)return;if(!file.type.startsWith('audio/')){toast('Please choose an audio file');return;}if(uploadedMusicUrl)URL.revokeObjectURL(uploadedMusicUrl);uploadedMusicUrl=URL.createObjectURL(file);const music=$('bgMusic');music.src=uploadedMusicUrl;music.load();music.play().then(()=>{isPlaying=true;$('musicBtn').textContent='♫ Pause background song';toast('Background song playing ♫')}).catch(()=>toast('Tap the music button to start the song'));});
@@ -107,14 +123,6 @@ function makeShareUrl(){
   if($('dateInput').value)url.searchParams.set('date',$('dateInput').value);
   return url.toString();
 }
-$('shareSiteBtn').addEventListener('click',async()=>{
-  const link=makeShareUrl();
-  try{
-    if(navigator.share){await navigator.share({title:'A Birthday Surprise ✨',text:'Someone made a birthday wish for you!',url:link});}
-    else if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(link);toast('Personalized website link copied!');}
-    else{window.prompt('Copy this personalized birthday website link:',link);}
-  }catch(e){if(e.name!=='AbortError')toast('Could not share link — copy it from the box');}
-});
 $('shareBtn').addEventListener('click',async()=>{
   const link=makeShareUrl();
   try{
@@ -153,16 +161,20 @@ $('downloadBtn').addEventListener('click',async()=>{
     ctx.fillStyle='#ffd978';ctx.font='bold 32px Arial';ctx.fillText($('datePreview').textContent,500,1080);ctx.fillStyle='#cbb9e2';ctx.font='24px Arial';ctx.fillText($('senderPreview').textContent,500,1150);ctx.fillStyle='#f4d9ff';ctx.font='20px Arial';ctx.fillText('MADE WITH BIRTHDAY MAGIC',500,1240);
     const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('PNG creation failed')),'image/png'));
     const fileUrl=URL.createObjectURL(blob);const a=document.createElement('a');a.href=fileUrl;a.download='birthday-card.png';a.style.display='none';document.body.appendChild(a);a.click();a.remove();
-    // Mobile browsers sometimes block downloads from generated canvases; open the PNG as a saveable fallback.
-    setTimeout(()=>{try{URL.revokeObjectURL(fileUrl)}catch(e){}},60000);toast('If the PNG did not download, open it from your browser downloads or try again.');
+    // Open a saveable PNG as well; this is more reliable on Android browsers that ignore download attributes.
+    const opened=window.open(fileUrl,'_blank');
+    if(!opened){toast('PNG created. If download is blocked, allow pop-ups or open the image link.');}
+    else toast('Birthday card image opened — use ⋮ or long-press to save it.');
+    setTimeout(()=>{try{URL.revokeObjectURL(fileUrl)}catch(e){}},120000);
   }catch(e){
     try{const dataUrl=document.createElement('canvas').toDataURL('image/png');window.open(dataUrl,'_blank');toast('If download is blocked, long-press the opened image to save it.')}catch(err){toast('Could not create the card. Try Chrome and allow downloads.')}
   }
 });
-// Try autoplay on load. Browsers may block audible autoplay until the visitor taps once.
-async function tryAutoplayMusic(){const music=$('bgMusic');music.loop=true;try{await music.play();isPlaying=true;$('musicBtn').textContent='♫ Pause background song'}catch(e){$('musicBtn').textContent='♫ Tap to play background song'}}
+// Autoplay is attempted immediately. Most mobile browsers block audible autoplay until a user gesture.
+async function tryAutoplayMusic(){const music=$('bgMusic');music.loop=true;music.muted=false;try{await music.play();isPlaying=true;$('musicBtn').textContent='♫ Pause background song';$('startMusicOverlay').style.display='none';}catch(e){$('musicBtn').textContent='♫ Play background song';$('startMusicOverlay').style.display='block';}}
+$('startMusicOverlay').addEventListener('click',async()=>{const music=$('bgMusic');try{await music.play();isPlaying=true;$('startMusicOverlay').style.display='none';$('musicBtn').textContent='♫ Pause background song';toast('Birthday music playing in loop ♫')}catch(e){toast('Please check that birthday-song.mp3 exists in your GitHub repository.')}});
 window.addEventListener('load',()=>{tryAutoplayMusic()});
-document.addEventListener('pointerdown',function startMusicOnce(){const music=$('bgMusic');if(music.paused&&!uploadedMusicUrl){music.play().then(()=>{$('musicBtn').textContent='♫ Pause background song';isPlaying=true}).catch(()=>{});}},{once:true});
+document.addEventListener('pointerdown',function startMusicOnce(){const music=$('bgMusic');if(music.paused&&!uploadedMusicUrl){music.play().then(()=>{$('musicBtn').textContent='♫ Pause background song';isPlaying=true;$('startMusicOverlay').style.display='none'}).catch(()=>{});}},{once:true});
 makeStars();update();loadSharedWish();
 </script>
 </body>
