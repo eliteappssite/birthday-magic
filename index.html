@@ -50,8 +50,8 @@ main{position:relative;z-index:1;width:min(1100px,92%);margin:auto;padding:28px 
         <p class="message" id="messagePreview">Wishing you a day filled with laughter, love, beautiful surprises and memories that last forever. Keep shining and never stop being amazing! 💖</p>
         <div class="wishline" id="datePreview">HAPPY BIRTHDAY ✨</div><div class="card-footer" id="senderPreview">A day as wonderful as you are</div>
       </article>
-      <div class="actions"><button class="btn primary" id="downloadBtn">⬇ Save birthday card</button><button class="btn secondary" id="shareBtn">↗ Share / copy wish</button></div>
-      <p class="tiny">“Save birthday card” downloads a picture of the greeting card. Photo and name are included in that image.</p>
+      <div class="actions"><button class="btn primary" id="downloadBtn">⬇ Save birthday card</button><button class="btn secondary" id="shareBtn">↗ Share personalized site</button></div>
+      <p class="tiny">Save the greeting card as a PNG image. If your phone blocks the download, the image will open so you can long-press and save it.</p>
     </div>
   </section>
   <section class="gallery-section section" aria-labelledby="galleryTitle">
@@ -69,7 +69,7 @@ main{position:relative;z-index:1;width:min(1100px,92%);margin:auto;padding:28px 
   <footer class="footer">Made for moments worth celebrating ✨
     <div class="creator">Developed with ✨ by <strong>Tarun</strong> · <a href="https://www.instagram.com/tarun.amv?vrfl=bXZndmRvN3Q1d2No" target="_blank" rel="noopener noreferrer">Instagram @tarun.amv</a></div>
   </footer>
-</main><audio id="bgMusic" loop preload="none"><source src="birthday-song.mp3" type="audio/mpeg"></audio><div class="toast" id="toast">Copied!</div>
+</main><audio id="bgMusic" loop autoplay playsinline preload="auto"><source src="birthday-song.mp3" type="audio/mpeg"></audio><div class="toast" id="toast">Copied!</div>
 <script>
 const $=id=>document.getElementById(id);let photoUrl=null,audioCtx=null,toneTimer=null,isPlaying=false,extraPhotoUrls=[],uploadedMusicUrl=null;
 const defaultMessage='Wishing you a day filled with laughter, love, beautiful surprises and memories that last forever. Keep shining and never stop being amazing! 💖';
@@ -115,7 +115,14 @@ $('shareSiteBtn').addEventListener('click',async()=>{
     else{window.prompt('Copy this personalized birthday website link:',link);}
   }catch(e){if(e.name!=='AbortError')toast('Could not share link — copy it from the box');}
 });
-$('shareBtn').addEventListener('click',async()=>{update();const text='🎉 Happy Birthday, '+($('nameInput').value.trim()||'Someone Special')+'! 🎂\n\n'+$('messagePreview').textContent+'\n\n'+$('senderPreview').textContent+'\n\nOpen your personalized birthday page: '+makeShareUrl();try{if(navigator.share){await navigator.share({title:'Birthday wishes',text,url:makeShareUrl()});}else if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(text);toast('Birthday wish and site link copied!')}else{window.prompt('Copy your birthday wish and link:',text)}}catch(e){if(e.name!=='AbortError')toast('Sharing cancelled')}});
+$('shareBtn').addEventListener('click',async()=>{
+  const link=makeShareUrl();
+  try{
+    if(navigator.share){await navigator.share({title:'A Birthday Surprise ✨',url:link});}
+    else if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(link);toast('Personalized website link copied!');}
+    else{window.prompt('Copy and share this personalized website link:',link);}
+  }catch(e){if(e.name!=='AbortError')toast('Could not share link');}
+});
 function loadSharedWish(){
   const params=new URLSearchParams(window.location.search);
   if(!params.has('name')&&!params.has('message')&&!params.has('sender'))return;
@@ -128,7 +135,34 @@ function loadSharedWish(){
   const note=document.createElement('p');note.className='pill';note.style.margin='0 auto 16px';note.style.width='fit-content';note.textContent='✨ A personalized birthday wish from '+($('senderInput').value.trim()||'someone special');document.querySelector('.hero').appendChild(note);
 }
 
-$('downloadBtn').addEventListener('click',async()=>{update();const card=$('birthdayCard');try{const canvas=document.createElement('canvas');canvas.width=1000;canvas.height=1300;const ctx=canvas.getContext('2d');const grad=ctx.createLinearGradient(0,0,1000,1300);grad.addColorStop(0,document.body.classList.contains('male')?'#071c48':'#190d38');grad.addColorStop(1,document.body.classList.contains('neutral')?'#644320':document.body.classList.contains('male')?'#172b73':'#501449');ctx.fillStyle=grad;ctx.fillRect(0,0,1000,1300);for(let i=0;i<100;i++){ctx.fillStyle='rgba(255,255,255,'+(Math.random()*.55)+')';ctx.beginPath();ctx.arc(Math.random()*1000,Math.random()*1300,Math.random()*2.5,0,Math.PI*2);ctx.fill()}ctx.textAlign='center';ctx.fillStyle='#f8eaff';ctx.font='bold 24px Arial';ctx.fillText('A LITTLE CELEBRATION FOR',500,100);ctx.font='100px Arial';ctx.fillText('🎂',500,220);let photoLoaded=false;if(photoUrl){try{const img=new Image();img.src=photoUrl;await img.decode();ctx.save();ctx.beginPath();ctx.arc(500,410,115,0,Math.PI*2);ctx.clip();const size=Math.min(img.width,img.height),sx=(img.width-size)/2,sy=(img.height-size)/2;ctx.drawImage(img,sx,sy,size,size,385,295,230,230);ctx.restore();photoLoaded=true}catch(e){}}if(!photoLoaded){ctx.fillStyle='#38245c';ctx.beginPath();ctx.arc(500,410,115,0,Math.PI*2);ctx.fill();ctx.font='100px Arial';ctx.fillText('🎈',500,445)}ctx.strokeStyle=document.body.classList.contains('male')?'#43ddff':'#ff70b7';ctx.lineWidth=8;ctx.beginPath();ctx.arc(500,410,123,0,Math.PI*2);ctx.stroke();ctx.fillStyle='#ffffff';let name=$('nameInput').value.trim()||'Someone Special';let fontSize=68;ctx.font='bold '+fontSize+'px Arial';while(ctx.measureText(name).width>850&&fontSize>32){fontSize-=3;ctx.font='bold '+fontSize+'px Arial'}ctx.fillText(name,500,610);ctx.fillStyle='#f0e5fa';ctx.font='30px Arial';const message=$('messagePreview').textContent;const words=message.split(/\s+/);let line='',lines=[];for(const word of words){const test=line?line+' '+word:word;if(ctx.measureText(test).width>760){lines.push(line);line=word}else line=test}if(line)lines.push(line);lines.slice(0,7).forEach((l,i)=>ctx.fillText(l,500,690+i*46));ctx.fillStyle='#ffd978';ctx.font='bold 32px Arial';ctx.fillText($('datePreview').textContent,500,1080);ctx.fillStyle='#cbb9e2';ctx.font='24px Arial';ctx.fillText($('senderPreview').textContent,500,1150);ctx.fillStyle='#f4d9ff';ctx.font='20px Arial';ctx.fillText('MADE WITH ✨ BIRTHDAY MAGIC',500,1240);const a=document.createElement('a');a.download='birthday-card.png';a.href=canvas.toDataURL('image/png');a.click();toast('Birthday card saved!')}catch(e){toast('Could not save card in this browser')}});
+$('downloadBtn').addEventListener('click',async()=>{
+  update();
+  try{
+    const canvas=document.createElement('canvas');canvas.width=1000;canvas.height=1300;
+    const ctx=canvas.getContext('2d');
+    const grad=ctx.createLinearGradient(0,0,1000,1300);
+    const male=document.body.classList.contains('male'),neutral=document.body.classList.contains('neutral');
+    grad.addColorStop(0,male?'#071c48':'#190d38');grad.addColorStop(1,neutral?'#644320':male?'#172b73':'#501449');ctx.fillStyle=grad;ctx.fillRect(0,0,1000,1300);
+    for(let i=0;i<120;i++){ctx.fillStyle='rgba(255,255,255,'+(Math.random()*.55)+')';ctx.beginPath();ctx.arc(Math.random()*1000,Math.random()*1300,Math.random()*2.5,0,Math.PI*2);ctx.fill()}
+    ctx.textAlign='center';ctx.fillStyle='#f8eaff';ctx.font='bold 24px Arial';ctx.fillText('A LITTLE CELEBRATION FOR',500,100);ctx.font='100px Arial';ctx.fillText('🎂',500,220);
+    let photoLoaded=false;if(photoUrl){try{const img=new Image();img.src=photoUrl;await img.decode();ctx.save();ctx.beginPath();ctx.arc(500,410,115,0,Math.PI*2);ctx.clip();const size=Math.min(img.width,img.height),sx=(img.width-size)/2,sy=(img.height-size)/2;ctx.drawImage(img,sx,sy,size,size,385,295,230,230);ctx.restore();photoLoaded=true}catch(e){}}
+    if(!photoLoaded){ctx.fillStyle='#38245c';ctx.beginPath();ctx.arc(500,410,115,0,Math.PI*2);ctx.fill();ctx.font='100px Arial';ctx.fillText('🎈',500,445)}
+    ctx.strokeStyle=male?'#43ddff':'#ff70b7';ctx.lineWidth=8;ctx.beginPath();ctx.arc(500,410,123,0,Math.PI*2);ctx.stroke();
+    ctx.fillStyle='#fff';let name=$('nameInput').value.trim()||'Someone Special',fontSize=68;ctx.font='bold '+fontSize+'px Arial';while(ctx.measureText(name).width>850&&fontSize>32){fontSize-=3;ctx.font='bold '+fontSize+'px Arial'}ctx.fillText(name,500,610);
+    ctx.fillStyle='#f0e5fa';ctx.font='30px Arial';const words=$('messagePreview').textContent.split(/\s+/);let line='',lines=[];for(const word of words){const test=line?line+' '+word:word;if(ctx.measureText(test).width>760){if(line)lines.push(line);line=word}else line=test}if(line)lines.push(line);lines.slice(0,7).forEach((l,i)=>ctx.fillText(l,500,690+i*46));
+    ctx.fillStyle='#ffd978';ctx.font='bold 32px Arial';ctx.fillText($('datePreview').textContent,500,1080);ctx.fillStyle='#cbb9e2';ctx.font='24px Arial';ctx.fillText($('senderPreview').textContent,500,1150);ctx.fillStyle='#f4d9ff';ctx.font='20px Arial';ctx.fillText('MADE WITH BIRTHDAY MAGIC',500,1240);
+    const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('PNG creation failed')),'image/png'));
+    const fileUrl=URL.createObjectURL(blob);const a=document.createElement('a');a.href=fileUrl;a.download='birthday-card.png';a.style.display='none';document.body.appendChild(a);a.click();a.remove();
+    // Mobile browsers sometimes block downloads from generated canvases; open the PNG as a saveable fallback.
+    setTimeout(()=>{try{URL.revokeObjectURL(fileUrl)}catch(e){}},60000);toast('If the PNG did not download, open it from your browser downloads or try again.');
+  }catch(e){
+    try{const dataUrl=document.createElement('canvas').toDataURL('image/png');window.open(dataUrl,'_blank');toast('If download is blocked, long-press the opened image to save it.')}catch(err){toast('Could not create the card. Try Chrome and allow downloads.')}
+  }
+});
+// Try autoplay on load. Browsers may block audible autoplay until the visitor taps once.
+async function tryAutoplayMusic(){const music=$('bgMusic');music.loop=true;try{await music.play();isPlaying=true;$('musicBtn').textContent='♫ Pause background song'}catch(e){$('musicBtn').textContent='♫ Tap to play background song'}}
+window.addEventListener('load',()=>{tryAutoplayMusic()});
+document.addEventListener('pointerdown',function startMusicOnce(){const music=$('bgMusic');if(music.paused&&!uploadedMusicUrl){music.play().then(()=>{$('musicBtn').textContent='♫ Pause background song';isPlaying=true}).catch(()=>{});}},{once:true});
 makeStars();update();loadSharedWish();
 </script>
 </body>
